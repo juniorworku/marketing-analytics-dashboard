@@ -2,3 +2,5 @@ pandas
 psycopg2
 matplotlib
 seaborn
+Telethon
+google-play-scraper
