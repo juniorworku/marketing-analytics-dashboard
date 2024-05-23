@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  redash:
+    image: redash/redash:latest
+    ports:
+      - "5000:5000"
+    environment:
+      REDASH_REDIS_URL: "redis://redis:6379/0"
+      REDASH_POSTGRES_PASSWORD: "your_postgres_password"
+    depends_on:
+      - redis
+      - postgres
+
+  metabase:
+    image: metabase/metabase:latest
+    ports:
+      - "3000:3000"
+
+  superset:
+    image: apache/superset:latest
+    environment:
+      SUPERSET_SECRET_KEY: "your_secret_key"
+      SUPERSET_DATABASE_PASSWORD: "your_postgres_password"
+    ports:
+      - "8088:8088"
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:12
+    environment:
+      POSTGRES_DB: "new_database"
+      POSTGRES_USER: "new_username"
+      POSTGRES_PASSWORD: "new_password"
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
