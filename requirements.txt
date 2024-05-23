@@ -4,3 +4,8 @@ matplotlib
 seaborn
 Telethon
 google-play-scraper
+nltk
+spacy 
+sklearn
+textblob
+gensim

@@ -1,28 +1,96 @@
+import os
 import requests
-from bs4 import BeautifulSoup
+import pandas as pd
+from google_play_scraper import Sort, reviews_all
+import nltk
+import spacy
+from textblob import TextBlob
+from nltk.corpus import stopwords
 
-def scrape_reviews():
-    url = "https://play.google.com/store/apps/details?id=com.bankofabyssinia.mobilebanking"
-    response = requests.get(url)
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
-        reviews = []
-        for review in soup.find_all('div', class_='zc7KVe'):
-            user_name = review.find('span', class_='X43Kjb').text
-            rating = int(review.find('div', class_='pf5lIe').find('div')['aria-label'].split()[1])
-            review_text = review.find('span', class_='p2TkOb').text
-            review_date = review.find('span', class_='p2TkOb').next_sibling.text
-            reviews.append({
-                'user_name': user_name,
-                'rating': rating,
-                'review_text': review_text,
-                'review_date': review_date
-            })
+# Load spaCy model
+nlp = spacy.load("en_core_web_sm")
+nltk.download("stopwords")
+stop_words = set(stopwords.words("english"))
+
+def fetch_reviews(app_id):
+    try:
+        reviews = reviews_all(
+            app_id,
+            sleep_milliseconds=0,
+            lang='en',
+            country='us',
+            sort=Sort.NEWEST,
+        )
         return reviews
-    else:
-        print("Failed to fetch reviews")
+    except Exception as e:
+        print(f"Failed to fetch reviews: {e}")
+        return None
 
-# Example usage
-reviews = scrape_reviews()
-for review in reviews:
-    print(review)
+def process_reviews(reviews):
+    processed_reviews = []
+    for review in reviews:
+        processed_review = {
+            "reviewId": review.get("reviewId", ""),
+            "userName": review.get("userName", ""),
+            "userImage": review.get("userImage", ""),
+            "👍": review.get("thumbsUpCount", 0),
+            "reviewCreatedVersion": review.get("reviewCreatedVersion", ""),
+            "at": review.get("at", "").isoformat() if review.get("at") else "",
+            "replyContent": review.get("replyContent", ""),
+            "repliedAt": review.get("repliedAt", "").isoformat() if review.get("repliedAt") else "",
+            "appVersion": review.get("appVersion", ""),
+            "score": review.get("score", 0),
+            "Comments": review.get("content", "")
+        }
+        processed_reviews.append(processed_review)
+    return processed_reviews
+
+def extract_keywords(comment):
+    doc = nlp(comment)
+    keywords = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop and token.lemma_ not in stop_words]
+    return ", ".join(keywords[:5])
+
+def categorize_review(comment):
+    categories = {
+        "Account and Identification Issues": ["otp", "identification", "account", "login"],
+        "Operational Challenges within the App": ["crash", "bug", "feature", "slow"]
+    }
+    comment_words = set(comment.lower().split())
+    for category, keywords in categories.items():
+        if comment_words.intersection(set(keywords)):
+            return category
+    return "Other"
+
+def extract_insight(comment):
+    blob = TextBlob(comment)
+    if blob.sentiment.polarity > 0:
+        sentiment = "Positive"
+    elif blob.sentiment.polarity < 0:
+        sentiment = "Negative"
+    else:
+        sentiment = "Neutral"
+    return sentiment
+
+def analyze_reviews(reviews):
+    for review in reviews:
+        review["Sentiment"] = extract_insight(review["Comments"])
+        review["Keywords"] = extract_keywords(review["Comments"])
+        review["LDA_Category"] = categorize_review(review["Comments"])
+        review["Insight"] = f"Influential words: {review['Keywords']}"
+    return reviews
+
+def save_to_csv(reviews, filename):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    df = pd.DataFrame(reviews)
+    df.to_csv(filename, index=False)
+
+def main():
+    app_id = 'com.abyssiniabank.mobilebanking'  # Abyssinia Bank app ID
+    reviews = fetch_reviews(app_id)
+    if reviews:
+        processed_reviews = process_reviews(reviews)
+        enriched_reviews = analyze_reviews(processed_reviews)
+        save_to_csv(enriched_reviews, 'data/abyssinia_bank_reviews.csv')
+
+if __name__ == "__main__":
+    main()
