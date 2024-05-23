@@ -1,5 +1,4 @@
 import os
-import requests
 import pandas as pd
 from google_play_scraper import Sort, reviews_all
 import nltk
@@ -7,10 +6,21 @@ import spacy
 from textblob import TextBlob
 from nltk.corpus import stopwords
 
-# Load spaCy model
-nlp = spacy.load("en_core_web_sm")
+# Ensure necessary resources are downloaded
 nltk.download("stopwords")
 stop_words = set(stopwords.words("english"))
+
+# Function to download and load spaCy model
+def load_spacy_model():
+    try:
+        nlp = spacy.load("en_core_web_sm")
+    except OSError:
+        os.system("python -m spacy download en_core_web_sm")
+        nlp = spacy.load("en_core_web_sm")
+    return nlp
+
+# Load spaCy model
+nlp = load_spacy_model()
 
 def fetch_reviews(app_id):
     try:
@@ -21,6 +31,7 @@ def fetch_reviews(app_id):
             country='us',
             sort=Sort.NEWEST,
         )
+        print(f"Fetched {len(reviews)} reviews.")
         return reviews
     except Exception as e:
         print(f"Failed to fetch reviews: {e}")
@@ -43,6 +54,7 @@ def process_reviews(reviews):
             "Comments": review.get("content", "")
         }
         processed_reviews.append(processed_review)
+    print(f"Processed {len(processed_reviews)} reviews.")
     return processed_reviews
 
 def extract_keywords(comment):
@@ -64,12 +76,11 @@ def categorize_review(comment):
 def extract_insight(comment):
     blob = TextBlob(comment)
     if blob.sentiment.polarity > 0:
-        sentiment = "Positive"
+        return "Positive"
     elif blob.sentiment.polarity < 0:
-        sentiment = "Negative"
+        return "Negative"
     else:
-        sentiment = "Neutral"
-    return sentiment
+        return "Neutral"
 
 def analyze_reviews(reviews):
     for review in reviews:
@@ -77,20 +88,24 @@ def analyze_reviews(reviews):
         review["Keywords"] = extract_keywords(review["Comments"])
         review["LDA_Category"] = categorize_review(review["Comments"])
         review["Insight"] = f"Influential words: {review['Keywords']}"
+    print(f"Analyzed {len(reviews)} reviews.")
     return reviews
 
 def save_to_csv(reviews, filename):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     df = pd.DataFrame(reviews)
     df.to_csv(filename, index=False)
+    print(f"Saved reviews to {filename}")
 
 def main():
-    app_id = 'com.abyssiniabank.mobilebanking'  # Abyssinia Bank app ID
+    app_id = 'com.boa.boaMobileBanking'  # Abyssinia Bank app ID
     reviews = fetch_reviews(app_id)
     if reviews:
         processed_reviews = process_reviews(reviews)
         enriched_reviews = analyze_reviews(processed_reviews)
         save_to_csv(enriched_reviews, 'data/abyssinia_bank_reviews.csv')
+    else:
+        print("No reviews to process.")
 
 if __name__ == "__main__":
     main()
