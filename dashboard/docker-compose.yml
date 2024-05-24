@@ -1,43 +1,28 @@
-version: '3.8'
+version: '3.1'
 
 services:
-  redash:
-    image: redash/redash:latest
-    ports:
-      - "5000:5000"
+  db:
+    image: postgres:latest
     environment:
-      REDASH_REDIS_URL: "redis://redis:6379/0"
-      REDASH_POSTGRES_PASSWORD: "your_postgres_password"
-    depends_on:
-      - redis
-      - postgres
+      POSTGRES_DB: new_database
+      POSTGRES_USER: new_username
+      POSTGRES_PASSWORD: new_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
 
   metabase:
     image: metabase/metabase:latest
     ports:
       - "3000:3000"
-
-  superset:
-    image: apache/superset:latest
     environment:
-      SUPERSET_SECRET_KEY: "your_secret_key"
-      SUPERSET_DATABASE_PASSWORD: "your_postgres_password"
-    ports:
-      - "8088:8088"
-    depends_on:
-      - postgres
-      - redis
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: metabase_user
+      MB_DB_PASS: metabase_password
+      MB_DB_HOST: db
 
-  postgres:
-    image: postgres:12
-    environment:
-      POSTGRES_DB: "new_database"
-      POSTGRES_USER: "new_username"
-      POSTGRES_PASSWORD: "new_password"
-    ports:
-      - "5432:5432"
-
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
+volumes:
+  db_data:
