@@ -1,36 +1,56 @@
 #!/bin/bash
 
-# Define the Docker Compose file
-DOCKER_COMPOSE_FILE=docker-compose.yml
+# Update package lists
+sudo apt-get update
 
-# Function to check if Docker is installed
-check_docker() {
-  if ! command -v docker &> /dev/null
-  then
-    echo "Docker could not be found. Please install Docker first."
-    exit 1
-  fi
-}
+# Install Docker
+if ! [ -x "$(command -v docker)" ]; then
+  echo 'Docker is not installed. Installing Docker...'
+  sudo apt-get install -y docker.io
+else
+  echo 'Docker is already installed.'
+fi
 
-# Function to check if Docker Compose is installed
-check_docker_compose() {
-  if ! command -v docker-compose &> /dev/null
-  then
-    echo "Docker Compose could not be found. Please install Docker Compose first."
-    exit 1
-  fi
-}
+# Install Docker Compose
+if ! [ -x "$(command -v docker-compose)" ]; then
+  echo 'Docker Compose is not installed. Installing Docker Compose...'
+  sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  sudo chmod +x /usr/local/bin/docker-compose
+else
+  echo 'Docker Compose is already installed.'
+fi
 
-# Check if Docker and Docker Compose are installed
-check_docker
-check_docker_compose
+# Create Docker Compose file for Metabase and PostgreSQL
+cat <<EOL > docker-compose.yml
+version: '3.1'
 
-# Pull the latest images
-echo "Pulling the latest Docker images..."
-docker-compose -f $DOCKER_COMPOSE_FILE pull
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: new_database
+      POSTGRES_USER: new_username
+      POSTGRES_PASSWORD: new_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
 
-# Start the Docker containers
-echo "Starting the Docker containers..."
-docker-compose -f $DOCKER_COMPOSE_FILE up -d
+  metabase:
+    image: metabase/metabase:latest
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: metabase_user
+      MB_DB_PASS: metabase_password
+      MB_DB_HOST: db
 
-echo "Dashboard system setup completed successfully!"
+volumes:
+  db_data:
+EOL
+
+# Start Docker Compose
+docker-compose up -d
