@@ -6,14 +6,14 @@ generated using Kedro 0.19.5
 
 import pandas as pd
 
-def process_ads_data(raw_ads_data: pd.DataFrame) -> pd.DataFrame:
+def process_ads_data(raw_telegram_messages: pd.DataFrame) -> pd.DataFrame:
     # Implement your data processing logic here
-    processed_data = raw_ads_data.copy()
+    processed_data = raw_telegram_messages.copy()
     # Example processing steps
     processed_data['processed_column'] = processed_data['some_column'] * 2
     return processed_data
 
-def process_play_store_data(raw_play_store_data: pd.DataFrame) -> pd.DataFrame:
+def process_play_store_data(raw_play_store_reviews: pd.DataFrame) -> pd.DataFrame:
     # Implement your data processing logic here
-    processed_data = raw_play_store_data.copy()
+    processed_data = raw_play_store_reviews.copy()
     return processed_data
