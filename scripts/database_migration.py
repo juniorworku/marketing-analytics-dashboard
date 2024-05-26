@@ -12,10 +12,10 @@ local_db_params = {
 }
 
 remote_db_params = {
-    "dbname": "remote_db",
-    "user": "remote_user",
-    "password": "remote_password",
-    "host": "remote_host",
+    "dbname": "new_database",
+    "user": "new_username",
+    "password": "new_password",
+    "host": "localhost",
     "port": "5432"
 }
 
