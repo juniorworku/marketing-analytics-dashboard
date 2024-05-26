@@ -1,18 +1,8 @@
-raw_telegram_messages:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/banks_ad_data.csv
 
-raw_play_store_reviews:
+raw_telegram_posts_data:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/banks_telegram_posts_data.csv
+
+raw_abyssinia_bank_reviews:
   type: pandas.CSVDataSet
   filepath: data/01_raw/abyssinia_bank_reviews.csv
-
-intermediate_standardized_messages:
-  type: pandas.ParquetDataSet
-  filepath: data/02_intermediate/standardized_messages.parquet
-
-primary_cleaned_data:
-  type: pandas.SQLTableDataSet
-  credentials: postgres_credentials
-  table_name: cleaned_data
-  load_args:
-    schema: public

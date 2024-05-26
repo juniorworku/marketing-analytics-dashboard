@@ -13,13 +13,13 @@ def create_pipeline(**kwargs):
         [
             node(
                 func=process_ads_data,
-                inputs="raw_telegram_messages",
+                inputs="raw_telegram_posts_data",
                 outputs="intermediate_ads_data",
                 name="process_ads_data_node",
             ),
             node(
                 func=process_play_store_data,
-                inputs="raw_play_store_reviews",
+                inputs="raw_abyssinia_bank_reviews",
                 outputs="intermediate_play_store_data",
                 name="process_play_store_data_node",
             ),
